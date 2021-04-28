@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -7,22 +8,35 @@ public class ChessPiece
     public int PieceType { get; set; } 
     public int Row { get; set; }
     public int Col { get; set; }
-    public PawnsScript script = new PawnsScript();
+    public string PieceName { get; private set; }
+
     private int[,] chessboard;
+    private string[] names = new string[] { "Pawn", "Knight", "Bishop", "Rook", "Queen", "King" };
+
 
     public ChessPiece(int row, int col, int type = 0)
     {
         PieceType = type;
         Row = row;
         Col = col;
+        PieceName = names[type];
+    }
+    public ChessPiece(int[] coord, int type = 0)
+    {
+        PieceType = type;
+        Row = coord[0];
+        Col = coord[1];
+        PieceName = names[type];
     }
 
-    public List<int[]> GetCaptures()
+    public string GetCoordinate()
     {
-        chessboard = script.chessboard;
+        return "abcdefgh"[Col] + "-" + "87654321"[Row];
+    }
+    public List<int[]> GetCaptures(int[,] board)
+    {
+        chessboard = board;
         List<int[]> captures = new List<int[]>();
-        int[][] offsets;
-
         switch (PieceType)
         {
             case (int)PieceNames.Knight:
@@ -40,34 +54,37 @@ public class ChessPiece
             case (int)PieceNames.Queen:
                 captures = RBQmoves(new int[][] { new int[] { -1, 0 }, new int[] { 0, -1 }, new int[] { 0, 1 }, new int[] { 1, 0 }, new int[] { -1, -1 }, new int[] { -1, 1 }, new int[] { 1, -1 }, new int[] { 1, 1 } });
                 break;
+            case (int)PieceNames.Pawn: case (int)PieceNames.Blocker:
+                throw new NotImplementedException("Captures were attempted to be obtained of an ineffective piece.");
         }
         return captures;
     }
 
     private List<int[]> KNmoves(int[][] offsets)
     {
-        return offsets.Where(x => CheckBounds(Row + x[0], Col + x[1])).ToList();
+        return offsets.Where(x => CheckBounds(Row + x[0], Col + x[1]))
+            .Select(x => new int[] { Row + x[0], Col + x[1] }).ToList();
     }
     private List<int[]> RBQmoves(int[][] offsets)
     {
-        List<int[]> captures = new List<int[]>();
-        foreach (int[] movement in offsets)
-        {
-            int number = 1;
-            while (CheckBounds(Row + number * movement[0], Col + number * movement[1]))
-            {
-                captures.Add(new int[] { Row + number * movement[0], Col + number * movement[1] });
-                if (chessboard[Row + number * movement[0], Col + number * movement[1]] != -1) //If we hit a space which has a piece, stop adding spaces.
-                    break;
-                number++;
-            }
-        }
-        return captures;
+         List<int[]> captures = new List<int[]>();
+         foreach (int[] movement in offsets)
+         {
+             int number = 1;
+             while (CheckBounds(Row + number * movement[0], Col + number * movement[1]))
+             {
+                 captures.Add(new int[] { Row + number * movement[0], Col + number * movement[1] });
+                 if (chessboard[Row + number * movement[0], Col + number * movement[1]] != -1) //If we hit a space which has a piece, stop adding spaces.
+                     break;
+                 number++;
+             }
+         }
+         return captures;
     }
 
     private bool CheckBounds(int row, int col)
     {
-        if (row >= 0 && row <= 7 && col >= 0 && col <= 7) return false;
+        if (row < 0 || row > 7 || col < 0 || col > 7) return false;
         else return true;
     }
 
