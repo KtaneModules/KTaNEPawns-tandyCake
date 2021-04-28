@@ -31,7 +31,7 @@ public class ChessPiece
 
     public string GetCoordinate()
     {
-        return "abcdefgh"[Col] + "-" + "87654321"[Row];
+        return "abcdefg"[Col] + "-" + "1234567"[Row];
     }
     public List<int[]> GetCaptures(int[,] board)
     {
@@ -74,6 +74,7 @@ public class ChessPiece
              while (CheckBounds(Row + number * movement[0], Col + number * movement[1]))
              {
                  captures.Add(new int[] { Row + number * movement[0], Col + number * movement[1] });
+
                  if (chessboard[Row + number * movement[0], Col + number * movement[1]] != -1) //If we hit a space which has a piece, stop adding spaces.
                      break;
                  number++;
@@ -84,7 +85,7 @@ public class ChessPiece
 
     private bool CheckBounds(int row, int col)
     {
-        if (row < 0 || row > 7 || col < 0 || col > 7) return false;
+        if (row < 0 || row > 6 || col < 0 || col > 6) return false;
         else return true;
     }
 

@@ -24,7 +24,7 @@ public class PawnsScript : MonoBehaviour
     public Coroutine[] buttonMovements = new Coroutine[4];
     int selectedIndex = 0;
 
-    private int[,] chessboard = new int[8, 8] { { -1, -1, -1, -1, -1, -1, -1, -1 }, { -1, -1, -1, -1, -1, -1, -1, -1 }, { -1, -1, -1, -1, -1, -1, -1, -1 }, { -1, -1, -1, -1, -1, -1, -1, -1 }, { -1, -1, -1, -1, -1, -1, -1, -1 }, { -1, -1, -1, -1, -1, -1, -1, -1 }, { -1, -1, -1, -1, -1, -1, -1, -1 }, { -1, -1, -1, -1, -1, -1, -1, -1 } };
+    private int[,] chessboard = new int[7, 7] { { -1, -1, -1, -1, -1, -1, -1 }, { -1, -1, -1, -1, -1, -1, -1 }, { -1, -1, -1, -1, -1, -1, -1 }, { -1, -1, -1, -1, -1, -1, -1 }, { -1, -1, -1, -1, -1, -1, -1 }, { -1, -1, -1, -1, -1, -1, -1 }, { -1, -1, -1, -1, -1, -1, -1 } };
     
     static int moduleIdCounter = 1;
     int moduleId;
@@ -36,7 +36,7 @@ public class PawnsScript : MonoBehaviour
     ChessPiece[] piecesOnBoard = new ChessPiece[8];
     ChessPiece[] pawns = new ChessPiece[8];
 
-    private List<int> allNumbers, numbers = new List<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63 };
+    private List<int> numbers = new List<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48 };
     //This above list is taken from wikipedia, an untrustworthy source. There may be non-numbers within this list. Please refer to ktane.timwi.de/HTML/Number%20Checker.html for further information
 
     void Awake ()
@@ -69,13 +69,13 @@ public class PawnsScript : MonoBehaviour
 
     void PlaceBlockers()
     {
-        int[] snletters = Bomb.GetSerialNumberLetters().Select(x => (x - 'A') % 8).ToArray();
-        int[] snnumbers = Bomb.GetSerialNumberNumbers().Select(x => 7 - ((x + 7) % 8)).ToArray();
+        int[] snletters = Bomb.GetSerialNumberLetters().Select(x => (x - 'A') % 7).ToArray();
+        int[] snnumbers = Bomb.GetSerialNumberNumbers().Select(x => (x + 6) % 7).ToArray();
         for (int i = 0; i < Math.Min(snletters.Count(), snnumbers.Count()); i++)
         {
             chessboard[snnumbers[i], snletters[i]] = (int)PieceNames.Blocker;
-            numbers.Remove(snnumbers[i] * 8 + snletters[i]);
-            Debug.LogFormat("[Pawns #{0}] Blocker placed at {1}-{2}.", moduleId, "abcdefgh"[snletters[i]], snnumbers[i] + 1);
+            numbers.Remove(snnumbers[i] * 6 + snletters[i]);
+            Debug.LogFormat("[Pawns #{0}] Blocker placed at {1}-{2}.", moduleId, "abcdefg"[snletters[i]], snnumbers[i] + 1);
         }
     }
 
@@ -86,14 +86,17 @@ public class PawnsScript : MonoBehaviour
             int position = numbers.PickRandom();
             numbers.Remove(position);
             int piece = UnityEngine.Random.Range(1, 6);
-            chessboard[position / 8, position % 8] = piece;
+            chessboard[position / 7, position % 7] = piece;
             piecesOnBoard[i] = new ChessPiece(Coordinate(position), piece);
         }
         for (int i = 0; i < 8; i++)
         {
-            int[] pawnPosition = (UnityEngine.Random.Range(0, 5) < 3) ?
+            int[] pawnPosition = (UnityEngine.Random.Range(0, 4) != 3
+                && piecesOnBoard[i].GetCaptures(chessboard).Where(x => numbers.Contains(NumPosition(x))).Count() != 0) ?
                 piecesOnBoard[i].GetCaptures(chessboard).Where(x => numbers.Contains(NumPosition(x))).PickRandom() :
                 Coordinate(numbers.PickRandom());
+            numbers.Remove(NumPosition(pawnPosition));
+            chessboard[pawnPosition[0], pawnPosition[1]] = (int)PieceNames.Pawn;
             pawns[i] = new ChessPiece(pawnPosition, (int)PieceNames.Pawn);
         }
     }
@@ -102,7 +105,7 @@ public class PawnsScript : MonoBehaviour
     {
         for (int i = 0; i < 8; i++)
         {
-            if (piecesOnBoard[i].GetCaptures(chessboard).Select(x => NumPosition(x)).Contains(pawns[i].Row * 8 + pawns[i].Col))
+            if (piecesOnBoard[i].GetCaptures(chessboard).Select(x => NumPosition(x)).Contains(pawns[i].Row * 7 + pawns[i].Col))
                 correctAnswers[i] = true;
             else correctAnswers[i] = false;
         }
@@ -121,10 +124,10 @@ public class PawnsScript : MonoBehaviour
         Debug.LogFormat("[Pawns #{0}] The full chessboard is as follows:", moduleId);
 
         string gridLogger = string.Empty;
-        for (int i = 0; i < 64; i++)
+        for (int i = 0; i < 49; i++)
         {
-            gridLogger += ".PNBRQKX"[chessboard[i / 8, i % 8] + 1];
-            if (i % 8 == 7)
+            gridLogger += ".PNBRQKX"[chessboard[6 - i / 7, i % 7] + 1];
+            if (i % 7 == 6)
             {
                 Debug.LogFormat("[Pawns #{0}] {1}", moduleId, gridLogger);
                 gridLogger = string.Empty;
@@ -199,24 +202,70 @@ public class PawnsScript : MonoBehaviour
 
     int NumPosition(int[] coordinate)
     {
-        return coordinate[0] * 8 + coordinate[1];
+        return coordinate[0] * 7 + coordinate[1];
     }
     int[] Coordinate(int position)
     {
-        return new int[] { position / 8, position % 8 };
+        return new int[] { position / 7, position % 7 };
     }
 
 #pragma warning disable 414
-    private readonly string TwitchHelpMessage = @"Use !{0} to do something.";
+    private readonly string TwitchHelpMessage = @"Use [!{0} cycle] to cycle through all 8 coordinate pairs. Use [!{0} left capture right pass] to press those buttons in order. Commands can be chained with spaces. Use [!{0} submit capture pass capture pass capture pass capture pass] to press those buttons, pressing right after each.";
     #pragma warning restore 414
 
-    IEnumerator ProcessTwitchCommand (string Command)
+    IEnumerator ProcessTwitchCommand (string input)
     {
-      yield return null;
+        string[] validCommands = new string[]            { "LEFT", "PREV", "PREVIOUS", "RIGHT", "NEXT", "CAPTURE", "PASS", "SAVE"};
+        int[] correspondingButtons = new int[] { 0, 0, 0, 1, 1, 2, 3, 3 };
+        string command = input.Trim().ToUpperInvariant();
+        List<string> parameters = command.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+        if (command == "CYCLE")
+        {
+            yield return null;
+            for (int i = 0; i < 8; i++)
+            {
+                buttons[1].OnInteract();
+                yield return "trycancel";
+                yield return new WaitForSeconds(3);
+            }
+        }
+        else if (parameters.All(x => validCommands.Contains(x)))
+        {
+            yield return null;
+            foreach (string item in parameters)
+            {
+                buttons[correspondingButtons[Array.IndexOf(validCommands, item)]].OnInteract();
+                yield return new WaitForSeconds(0.2f);
+            }
+        }
+        else if (parameters.First() == "SUBMIT")
+        {
+            parameters.Remove("SUBMIT");
+            if (parameters.All(x => new string[] { "CAPTURE", "PASS" }.Contains(x)))
+            {
+                yield return null;
+                foreach (string action in parameters)
+                {
+                    buttons[(action == "CAPTURE") ? 2 : 3].OnInteract();
+                    yield return new WaitForSeconds(0.2f);
+                    buttons[1].OnInteract();
+                    yield return new WaitForSeconds(0.2f);
+                }
+            }
+        }
     }
 
     IEnumerator TwitchHandleForcedSolve ()
     {
-      yield return null;
+        while (!moduleSolved)
+        {
+            if (!submitted[selectedIndex])
+            {
+                buttons[(correctAnswers[selectedIndex])? 2 : 3].OnInteract();
+                yield return new WaitForSeconds(0.2f);
+            }
+            buttons[1].OnInteract();
+            yield return new WaitForSeconds(0.2f);
+        }
     }
-}
+}   
