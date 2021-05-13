@@ -74,7 +74,7 @@ public class PawnsScript : MonoBehaviour
         for (int i = 0; i < Math.Min(snletters.Count(), snnumbers.Count()); i++)
         {
             chessboard[snnumbers[i], snletters[i]] = (int)PieceNames.Blocker;
-            numbers.Remove(snnumbers[i] * 6 + snletters[i]);
+            numbers.Remove(snnumbers[i] * 7 + snletters[i]);
             Debug.LogFormat("[Pawns #{0}] Blocker placed at {1}-{2}.", moduleId, "abcdefg"[snletters[i]], snnumbers[i] + 1);
         }
     }
